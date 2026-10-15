@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repository Searcher</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        header {
+            background: #172033;
+            color: white;
+            padding: 24px 8%;
+        }
+
+        header h1 { margin: 0 0 8px; }
+        header p { margin: 0; color: #cbd5e1; }
+
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .panel, .repo {
+            background: white;
+            border: 1px solid #e1e7ef;
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 12px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover { background: #1d4ed8; }
+
+        .repo h3 { margin: 0 0 10px; }
+        .repo p { color: #475569; line-height: 1.5; }
+        .meta { color: #64748b; font-size: 14px; }
+        .repo a { color: #2563eb; text-decoration: none; }
+        #status { margin: 16px 0; color: #475569; }
+
+        @media (max-width: 700px) {
+            .filters { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>GitHub Repository Searcher</h1>
+    <p>Discover repositories, explore projects, and compare stars.</p>
+</header>
+
+<main>
+    <section class="panel">
+        <h2>Search repositories</h2>
+        <form id="searchForm">
+            <div class="filters">
+                <input id="query" placeholder="Search repositories..." required>
+                <select id="language">
+                    <option value="">All languages</option>
+                    <option>Java</option>
+                    <option>Python</option>
+                    <option>JavaScript</option>
+                    <option>TypeScript</option>
+                    <option>Go</option>
+                    <option>HTML</option>
+                    <option>CSS</option>
+                    <option>C++</option>
+                </select>
+                <select id="sort">
+                    <option value="stars">Most stars</option>
+                    <option value="forks">Most forks</option>
+                    <option value="updated">Recently updated</option>
+                </select>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+    </section>
+
+    <p id="status">Enter a search term to find GitHub repositories.</p>
+    <section id="results"></section>
+</main>
+
+<script>
+    const form = document.getElementById("searchForm");
+    const statusText = document.getElementById("status");
+    const results = document.getElementById("results");
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const query = document.getElementById("query").value.trim();
+        const language = document.getElementById("language").value;
+        const sort = document.getElementById("sort").value;
+
+        if (!query) {
+            statusText.textContent = "Please enter a search term.";
+            return;
+        }
+
+        statusText.textContent = "Searching GitHub repositories...";
+        results.replaceChildren();
+
+        try {
+            const response = await fetch("/api/github/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query, language, sort })
+            });
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || `Request failed (${response.status})`);
+            }
+
+            const repositories = await response.json();
+
+            if (!repositories.length) {
+                statusText.textContent = "No repositories found. Try another search.";
+                return;
+            }
+
+            statusText.textContent =
+                `${repositories.length} repositories found.`;
+
+            repositories.forEach(repo => {
+                const card = document.createElement("article");
+                card.className = "repo";
+
+                const title = document.createElement("h3");
+                const link = document.createElement("a");
+                link.textContent = `${repo.owner || ""}/${repo.name}`;
+                link.href = `https://github.com/${repo.owner}/${repo.name}`;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                title.appendChild(link);
+
+                const description = document.createElement("p");
+                description.textContent =
+                    repo.description || "No description available.";
+
+                const meta = document.createElement("div");
+                meta.className = "meta";
+                meta.textContent =
+                    `Language: ${repo.language || "Not specified"} | ` +
+                    `★ ${repo.stars ?? 0} | Forks: ${repo.forks ?? 0}`;
+
+                card.append(title, description, meta);
+                results.appendChild(card);
+            });
+        } catch (error) {
+            statusText.textContent =
+                "Search failed: " + error.message;
+        }
+    });
+</script>
+</body>
+</html>
