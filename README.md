@@ -66,3 +66,10 @@ Run the automated tests using:
 **Betharasi Sruthi**
 
 - GitHub: [Betharasisruthi](https://github.com/Betharasisruthi)
+# GitHub Repository Searcher
+
+A web application built with Java, Spring Boot, PostgreSQL, and HTML/CSS/JavaScript to search and explore GitHub repositories.
+
+**Live Demo:** https://github-repository-searcher-cnrz.onrender.com
+
+**GitHub Repository:** https://github.com/Betharasisruthi/github-repository-searcher
